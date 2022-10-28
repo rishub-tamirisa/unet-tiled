@@ -1,0 +1,18 @@
+# ignore pycache
+__pycache__/
+
+# ignore .DS_Store
+.DS_Store
+
+# ignore .ipynb_checkpoints
+.ipynb_checkpoints/
+
+# ignore .git
+.git/
+
+# ignore data files
+data/
+
+# ignore pkl and pth files
+*.pkl
+*.pth
