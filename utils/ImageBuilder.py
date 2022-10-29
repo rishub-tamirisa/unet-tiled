@@ -42,11 +42,14 @@ class ImageBuilder:
         if self.storage[name].get('image_shape') is None:
             self.storage[name]['image_shape'] = image_shape
 
-    def reset_storage(self):
+    def reset_storage(self, name:str):
         '''
-        Clears the storage dictionary.
+        Resets the storage dictionary for the given `name` key.
+        
+        Args:
+            name (str): The name of the image.
         '''
-        self.storage = {}
+        self.storage[name] = {}
 
     def build_and_save_image(self, name: str):
         '''

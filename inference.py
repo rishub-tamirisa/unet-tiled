@@ -77,8 +77,8 @@ if __name__ == "__main__":
             
             # name = tile['name'][0]
 
-            image_builder.build_and_save_image(name)
-            image_builder.reset_storage()
+            image_builder.build_and_save_image(name) 
+            image_builder.reset_storage(name) # clear storage as images are built TODO: make this happen as tiles are added, not when images are built
             save_true_validation_data(path=mypath, out_path='/home/rshb/myspinner/kidney/VisibleAligned/output', name=name)
 
             # accuracy = pixelwise_accuracy(tile['mask'], image_builder._get_predicted_mask_from_output(output))
