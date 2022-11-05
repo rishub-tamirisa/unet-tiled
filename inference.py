@@ -6,7 +6,7 @@ import logging
 from tqdm import tqdm, trange
 import torch
 import matplotlib.pyplot as plt
-from utils.extra import load_data_iter, IterDataset, tensor_to_tuple, Test_Train_Generator
+from utils.extra import IterDataset, tensor_to_tuple, Test_Train_Generator
 from utils.ImageBuilder import ImageBuilder
 import pickle
 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     tile_dim = 128
 
     # - - - - - - - INFERENCE LIST - - - - - - - -
-    inference_list = ['AM10']
+    inference_list = ['NK2']
 
     datagen = Test_Train_Generator(dir_path=mypath, split=split, shuffle=True)
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     net = UNet(n_channels=1, n_classes=3)
 
     # load model from /home/rshb/myspinner/kidney/VisibleAligned/checkpoints
-    epoch = 4
+    epoch = 145
     net.load_state_dict(torch.load('/home/rshb/myspinner/kidney/VisibleAligned/checkpoints/unet_epoch'+str(epoch)+'.pth'))
 
     net.eval()
@@ -78,7 +78,8 @@ if __name__ == "__main__":
             # name = tile['name'][0]
 
             image_builder.build_and_save_image(name) 
-            image_builder.reset_storage(name) # clear storage as images are built TODO: make this happen as tiles are added, not when images are built
+            image_builder.reset_storage(name) 
+            # clear storage as images are built TODO: make this happen as tiles are added, not when images are built 
             save_true_validation_data(path=mypath, out_path='/home/rshb/myspinner/kidney/VisibleAligned/output', name=name)
 
             # accuracy = pixelwise_accuracy(tile['mask'], image_builder._get_predicted_mask_from_output(output))

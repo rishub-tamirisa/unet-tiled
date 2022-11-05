@@ -4,8 +4,6 @@ from os import walk
 import torch
 import pickle
 import numpy as np
-import warnings
-
 
 def _extract_tiles_generator(image, mask, tile_dim: int = 256, sparsity_threshold: float = 0.1, name: str = '', dense_multiplier: int = 1,training:bool=False,  validation: bool = False, inference:bool = False, shuffle: bool = False):
     '''
@@ -32,7 +30,7 @@ def _extract_tiles_generator(image, mask, tile_dim: int = 256, sparsity_threshol
     if shuffle:
         np.random.shuffle(_i_idx)
         np.random.shuffle(_j_idx)
-
+    
     for i in _i_idx:
         for j in _j_idx:
             tile = image[i:i + tile_dim, j:j + tile_dim]
@@ -43,10 +41,14 @@ def _extract_tiles_generator(image, mask, tile_dim: int = 256, sparsity_threshol
                 yield {'image': tile, 'mask': mask_tile, 'index': (i, j), 'name': name, 'image_shape': (image.shape[0], image.shape[1]), 'duplicate': False}
             
             density = np.count_nonzero(mask_tile) / (mask_tile.shape[0] ** 2)
+            assert density <= 1 and density >= 0, 'Density must be between 0 and 1'
             if density >= sparsity_threshold:
-                if density > 0.3 and training:
-                    for _ in range(dense_multiplier):
-                        yield {'image': tile, 'mask': mask_tile, 'index': (i, j), 'name': name, 'image_shape': (image.shape[0], image.shape[1]), 'duplicate': True}
+                if training:
+                    if dense_multiplier > 1 and density > 0.3:
+                        for i in range(dense_multiplier):
+                            yield {'image': torch.rot90(tile, i % 4), 'mask': torch.rot90(mask_tile, i % 4)}
+                    else:
+                        yield {'image': tile, 'mask': mask_tile, 'index': (i, j), 'name': name, 'image_shape': (image.shape[0], image.shape[1]), 'duplicate': False}
                 if validation:
                     yield {'image': tile, 'mask': mask_tile, 'index': (i, j), 'name': name, 'image_shape': (image.shape[0], image.shape[1]), 'duplicate': False}
 
@@ -139,7 +141,7 @@ class IterDataset(torch.utils.data.IterableDataset):
 
 class Test_Train_Generator():
 
-    def __init__(self, dir_path:str=None, split:float=0.5, shuffle=True):
+    def __init__(self, dir_path:str=None, split:float=0.5, shuffle=True, verbose=False):
         '''
         dir_path: path to directory containing all files
         split: float between 0 and 1, determines the split between training and testing data
@@ -150,6 +152,10 @@ class Test_Train_Generator():
         self.shuffle = shuffle
 
         self.train_files, self.train_label_files, self.test_files, self.test_label_files = _compute_data_from_path(self.path, self.split, self.shuffle)
+
+        if verbose:
+            print ("List of training files: ", self.train_files)
+            print ("List of testing files: ", self.test_files)
 
     def length(self, mode:str='train'):
         '''
@@ -170,7 +176,7 @@ class Test_Train_Generator():
         else:
             raise ValueError('mode must be either train, test, or all')
 
-    def load_data_iter(self, dense_multiplier:int=1, training:bool=False, validation:bool=False, inference:bool=False, tile_dim: int = 256, sparsity_threshold: float = 0.1, inference_list: list = None):
+    def load_data_iter(self, dense_multiplier:int=1, training:bool=False, validation:bool=False, inference:bool=False, tile_dim: int = 256, sparsity_threshold: float = 0.1, inference_list: list = None, train_list: list = None):
         '''
         Loads the training data from the given directory path.
         
@@ -202,7 +208,7 @@ class Test_Train_Generator():
         elif validation:
             files = self.test_files
             label_files = self.test_label_files
-        elif inference: # inference special behavior
+        elif inference or train_list is not None: # inference special behavior
             files = self.train_files + self.test_files
             label_files = self.train_label_files + self.test_label_files
 
@@ -212,10 +218,14 @@ class Test_Train_Generator():
             name = files[i][len(_name_cutoff):-4]
             if (inference and name not in inference_list) or (not inference and name in inference_list):
                 continue
+            if (training and train_list is not None and name not in train_list):
+                continue
             
             train = torch.Tensor(pickle.load(open(files[i], 'rb'))['VisRegistered'])#)
-            label = torch.Tensor(pickle.load(open(label_files[i], 'rb'))['resizedROIs'])
-
+            try:
+                label = torch.Tensor(pickle.load(open(label_files[i], 'rb'))['resizedROIs'])
+            except:
+                label = torch.Tensor(pickle.load(open(label_files[i], 'rb'))['annotations'])
             for tile in _extract_tiles_generator(train, label, tile_dim, sparsity_threshold, name, dense_multiplier=dense_multiplier, training=training, validation=validation,inference = inference, shuffle=self.shuffle):
                 yield tile
 
