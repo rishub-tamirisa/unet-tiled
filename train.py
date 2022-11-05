@@ -173,42 +173,6 @@ if __name__ == "__main__":
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # TODO: Get distributed training to work using torch.distributed.launch or torchrun
-    '''
-    TORCH DISTRIBUTED INITIALIZATION -------------------------------------------------
-    '''
-    # # Initializes the distributed backend which will take care of synchronizing nodes/GPUs
-    # dist_url = "env://"  # default
-
-    # # only works with torch.distributed.launch // torch.run
-    # rank = int(os.environ["RANK"])
-    # world_size = int(os.environ['WORLD_SIZE'])
-    # local_rank = int(os.environ['LOCAL_RANK'])
-    # print(f'rank: {rank}, world_size: {world_size}, local_rank: {local_rank}')
-    # dist.init_process_group(
-    #     backend="nccl",
-    #     init_method=dist_url,
-    #     world_size=world_size,
-    #     rank=rank)
-
-    # # this will make all .cuda() calls work properly
-    # torch.cuda.set_device(local_rank)
-
-    # # synchronizes all the threads to reach this point before moving on
-    # dist.barrier()
-
-    # net = UNet().cuda()
-    # # net = torch.nn.DataParallel(net)
-    # # net.to(device)
-    # # Convert BatchNorm to SyncBatchNorm. 
-    # net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(net)
-    # local_rank = int(os.environ['LOCAL_RANK'])
-    # net = torch.nn.parallel.DistributedDataParallel(net, device_ids=[local_rank])
-
-    '''
-    ------------------------------------------------------------------------------------
-    '''
-
     train_dataset = IterDataset(generator=datagen.load_data_iter(
         dense_multiplier=dense_multiplier, 
         training=True, 
