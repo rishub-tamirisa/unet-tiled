@@ -197,7 +197,7 @@ if __name__ == "__main__":
 
 
     net = UNet()
-    net = torch.nn.DataParallel(net)
+    # net = torch.nn.DataParallel(net)
     net.to(device=device)
 
     try:
